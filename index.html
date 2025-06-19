@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Book Finder</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    .book { margin: 10px 0; }
+    button { margin-left: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Search Books</h1>
+  <input type="text" id="searchInput" placeholder="Enter title or author">
+  <button onclick="searchBooks()">Search</button>
+
+  <div id="book-list"></div>
+
+  <script>
+    async function searchBooks() {
+      const query = document.getElementById("searchInput").value;
+      const list = document.getElementById("book-list");
+      list.innerHTML = "Loading...";
+
+      try {
+        const res = await fetch(`http://localhost:8000/books?q=${encodeURIComponent(query)}`);
+        const books = await res.json();
+
+        list.innerHTML = "";
+        if (books.length === 0) {
+          list.textContent = "No books found.";
+          return;
+        }
+
+        books.forEach(book => {
+          const div = document.createElement("div");
+          div.className = "book";
+          div.textContent = `${book.title} by ${book.author} (${book.year})`;
+
+          const btn = document.createElement("button");
+          btn.textContent = "Save";
+          btn.onclick = () => saveBook(book);
+
+          div.appendChild(btn);
+          list.appendChild(div);
+        });
+      } catch (err) {
+        list.textContent = "Error loading books.";
+      }
+    }
+
+    async function saveBook(book) {
+      try {
+        const res = await fetch("http://localhost:8000/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(book)
+        });
+        const result = await res.json();
+        alert(result.status || result.error);
+      } catch (err) {
+        alert("Error saving book.");
+      }
+    }
+  </script>
+</body>
+</html>
